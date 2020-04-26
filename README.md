@@ -1,6 +1,12 @@
 # CS1555-Term-Project
 Term Project
  
-Phase 2 Submission
+Phase 3 Submission
 
-Currently all the SQL requirements are finished, Java I fell behind from work but I will get up to speed.
+To compile make sure the JDBC are alongside all the java files and compile them all separatley.
+
+javac Olympics.java
+javac driver.java
+javac userinterface.java
+
+Then you can simply run them all individually either driver or userinterface by just doing java <class-name>. Olympics.java will never be directly ran.
