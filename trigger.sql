@@ -4,6 +4,8 @@
 --but I will need to update them before phase 3.
 
 
+--TRIGGER: Assigns medal based on position such as if any position is 1, then the trigger will replace that null value
+--with
 CREATE OR REPLACE TRIGGER ASSIGN_MEDAL --Trigger to assign medals based on position
     BEFORE INSERT
     ON SCOREBOARD
@@ -19,37 +21,41 @@ CREATE OR REPLACE TRIGGER ASSIGN_MEDAL --Trigger to assign medals based on posit
 
         FOR i IN (select * from SCOREBOARD WHERE MEDAL_ID IS NULL) LOOP
             IF i.POSITION = 1 then
-                UPDATE SCOREBOARD set MEDAL_ID = 1 WHERE MEDAL_ID IS NULL;
+                :NEW.MEDAL_ID := gold;
             ELSIF i.POSITION = 2 then
-                UPDATE SCOREBOARD set MEDAL_ID = 2 WHERE MEDAL_ID IS NULL;
+                :NEW.MEDAL_ID := silver;
             ELSIF i.POSITION = 3 then
-                UPDATE SCOREBOARD set MEDAL_ID = 3 WHERE MEDAL_ID IS NULL;
+                :NEW.MEDAL_ID := bronze;
             end if;
         END LOOP;
-
     END;
 
+--if participant was on team
 
-CREATE OR REPLACE TRIGGER ATHLETE--Trigger to delete all data associated with that athlete
-    BEFORE DELETE
+--TRIGGER: First searches for any team that athlete is a member of. If that value from the query is not null, go to Team,
+--and update the status to 'n'
+CREATE OR REPLACE TRIGGER ATHLETE_DISMISSAL--Trigger to delete all data associated with that athlete
+    AFTER DELETE
     ON PARTICIPANT
     FOR EACH ROW
+        DECLARE
+            teamid integer;
+            athlete integer;
     BEGIN
-        DELETE FROM TEAM_MEMBER WHERE TEAM.PARTICPANT_ID = PARTICIPANT_ID;
+        SELECT PARTICIPANT_ID INTO athlete FROM PARTICIPANT;
+        Select TEAM_ID into teamid FROM TEAM_MEMBER WHERE TEAM_MEMBER.PARTICIPANT_ID = athlete;
 
+        UPDATE EVENT_PARTICIPATION SET STATUS = 'n' WHERE EVENT_PARTICIPATION.TEAM_ID = teamid;
 
+        DELETE FROM TEAM_MEMBER WHERE TEAM_MEMBER.PARTICIPANT_ID = athlete;
 
     END;
-
-
-
-
 
 --CREATE OR REPLACE TRIGGER ATHLETE_DISMISSAL
 
 
-
---Working Trigger
+--ENFORCE_CAPACITY TRIGGER----------------------------------------------------------------------------------------------
+--Trigger that enforces event capacity based on number of events for that venue
 CREATE OR REPLACE TRIGGER ENFORCE_CAPACITY --Trigger to enforce venue capacity
    BEFORE INSERT
    ON EVENT
@@ -65,6 +71,8 @@ CREATE OR REPLACE TRIGGER ENFORCE_CAPACITY --Trigger to enforce venue capacity
       end if;
    END;
 
+
+------------------------------------------------------------------------------------------------------------------------
 --SEQUENCE TRIGGERS: Replaces an initial null value with a generated sequence ID starting with 1 and incrementing by 1
 CREATE OR REPLACE TRIGGER ACCOUNT_GEN
     BEFORE INSERT
@@ -112,4 +120,20 @@ CREATE OR REPLACE TRIGGER EVENT_GEN
     FOR EACH ROW
     BEGIN
         SELECT EVENTS_ID.nextval INTO :NEW.event_id FROM DUAL;
+    end;
+
+CREATE OR REPLACE TRIGGER COUNTRY_GEN
+    BEFORE INSERT
+    ON COUNTRY
+    FOR EACH ROW
+    BEGIN
+        SELECT COUNTRYS_ID.nextval INTO :NEW.country_id FROM DUAL;
+    end;
+
+CREATE OR REPLACE TRIGGER PART_GEN
+    BEFORE INSERT
+    ON PARTICIPANT
+    FOR EACH ROW
+    BEGIN
+        SELECT PART_ID.nextval INTO :NEW.participant_id FROM DUAL;
     end;
